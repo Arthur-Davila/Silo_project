@@ -8,7 +8,7 @@
 // ===== Configurações =====
 #define WIFI_SSID "uaifai-tiradentes"
 #define WIFI_PASS "bemvindoaocesar"
-#define MQTT_SERVER "172.26.66.249"
+#define MQTT_SERVER "172.26.70.31"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "silo/dados"
 
