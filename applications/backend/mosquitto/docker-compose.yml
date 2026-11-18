@@ -1,0 +1,23 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+            - C:/Users/Tutu/Documents/VIDA/Minha Vida/Faculdade/Cesar/Sistemas Embarcados/MQTT/silo-docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: node-red
+    restart: unless-stopped
+    user: "root"
+    ports:
+      - "1880:1880"
+    environment:
+      - TZ=America/Recife
+    volumes:
+      - ./node-red-data:/data
+    depends_on:
+      - mosquitto

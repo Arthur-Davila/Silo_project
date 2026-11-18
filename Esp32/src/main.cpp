@@ -8,7 +8,8 @@
 // ===== Configurações =====
 #define WIFI_SSID "uaifai-tiradentes"
 #define WIFI_PASS "bemvindoaocesar"
-#define MQTT_SERVER "172.26.70.31"
+// Use o IPv4 da máquina Windows na rede local (nao o IP interno do container).
+#define MQTT_SERVER "192.168.0.9"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "silo/dados"
 
@@ -92,12 +93,25 @@ void taskMQTT(void *pvParameters) {
     mqtt.setServer(MQTT_SERVER, MQTT_PORT);
     
     while (1) {
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("WiFi desconectado; reconectando...");
+            mqtt.disconnect();
+            WiFi.begin(WIFI_SSID, WIFI_PASS);
+            while (WiFi.status() != WL_CONNECTED) {
+                vTaskDelay(pdMS_TO_TICKS(500));
+                Serial.print(".");
+            }
+            Serial.println(" WiFi reconectado!");
+            continue;
+        }
+
         if (!mqtt.connected()) {
             Serial.print("Conectando MQTT...");
             if (mqtt.connect("ESP32-Silo")) {
                 Serial.println(" OK!");
             } else {
-                Serial.println(" Falhou!");
+                Serial.print(" Falhou! Estado MQTT: ");
+                Serial.println(mqtt.state());
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 continue;
             }
@@ -121,14 +135,20 @@ void taskMQTT(void *pvParameters) {
             snprintf(json, sizeof(json),
                 "{\"temp_grao\":%.1f,\"temp_ar\":%.1f,\"umid_ar\":%.0f,\"diferenca\":%.1f}",
                 tGrao, tAr, uAr, tGrao - tAr);
-            mqtt.publish(MQTT_TOPIC, json);
+            if (!mqtt.publish(MQTT_TOPIC, json)) {
+                Serial.println("Falha ao publicar dados MQTT.");
+            }
         } else if (gOk) {
             snprintf(json, sizeof(json), "{\"temp_grao\":%.1f}", tGrao);
-            mqtt.publish(MQTT_TOPIC, json);
+            if (!mqtt.publish(MQTT_TOPIC, json)) {
+                Serial.println("Falha ao publicar dados MQTT.");
+            }
         } else if (dOk) {
             snprintf(json, sizeof(json),
                 "{\"temp_ar\":%.1f,\"umid_ar\":%.0f}", tAr, uAr);
-            mqtt.publish(MQTT_TOPIC, json);
+            if (!mqtt.publish(MQTT_TOPIC, json)) {
+                Serial.println("Falha ao publicar dados MQTT.");
+            }
         }
         
         vTaskDelay(pdMS_TO_TICKS(2000));
