@@ -1,3 +1,7 @@
+#ifndef ARDUINO
+#define ARDUINO 10819
+#endif
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>

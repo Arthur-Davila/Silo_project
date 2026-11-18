@@ -6,7 +6,37 @@ services:
     ports:
       - "1883:1883"
     volumes:
-            - C:/Users/Tutu/Documents/VIDA/Minha Vida/Faculdade/Cesar/Sistemas Embarcados/MQTT/silo-docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+
+  api:
+    build:
+      context: ../api
+    container_name: silo-api
+    restart: unless-stopped
+    environment:
+      API_PORT: "3001"
+      DB_PATH: /data/telemetry.sqlite
+      MQTT_HOST: host.docker.internal
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: silo/dados
+    ports:
+      - "3001:3001"
+    volumes:
+      - telemetry-data:/data
+
+  frontend:
+    build:
+      context: ../../frontend
+    container_name: silo-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_PROXY_TARGET: http://api:3001
+    ports:
+      - "8443:8443"
+    depends_on:
+      - api
 
   node-red:
     image: nodered/node-red:latest
@@ -21,3 +51,7 @@ services:
       - ./node-red-data:/data
     depends_on:
       - mosquitto
+
+volumes:
+  mqtt-data:
+  telemetry-data:
